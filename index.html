@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amplifier Power Calculator</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font family -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Container -->
+    <div id="calculator-card" class="w-full max-w-lg bg-white dark:bg-gray-800 shadow-2xl rounded-xl p-8 space-y-8 transition duration-500">
+        
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white text-center mb-4">
+            Amplifier Power Calculator
+        </h1>
+        
+        <p id="error-message" class="text-center text-red-500 text-base font-semibold mb-4 hidden"></p>
+
+        <!-- 1. CALCULATE RMS POWER (P = V^2 / R) -->
+        <div id="power-section" class="p-5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-700">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                Calculate Power Output
+            </h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
+                Find the amplifier's maximum power from measured voltage.
+            </p>
+            
+            <div class="space-y-4">
+                <!-- RMS Voltage Input -->
+                <div>
+                    <label for="rmsVoltage" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        RMS Voltage Before Clipping
+                    </label>
+                    <div class="relative mt-1 rounded-md shadow-sm">
+                        <input type="number" id="rmsVoltage" placeholder="e.g., 28.3" step="0.1"
+                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
+                            min="0">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
+                                Volts (V)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resistance Input -->
+                <div>
+                    <label for="resistanceP" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Load Resistance
+                    </label>
+                    <div class="relative mt-1 rounded-md shadow-sm">
+                        <input type="number" id="resistanceP" placeholder="e.g., 4" step="0.1"
+                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
+                            min="0.1">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
+                                Ohms
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Calculation Button -->
+                <button id="calculatePowerBtn"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
+                    Calculate RMS Power
+                </button>
+            </div>
+            
+            <!-- Result Display for Power -->
+            <div id="result-power-container" class="mt-6 p-4 border-t border-gray-300 dark:border-gray-600 text-center hidden">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Calculated Maximum RMS Power ($P_{RMS}$):
+                </p>
+                <p id="output-power" class="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">
+                    0.00 W
+                </p>
+            </div>
+        </div>
+
+        <!-- 2. CALCULATE TARGET VOLTAGE (V = sqrt(P * R)) -->
+        <div id="voltage-section" class="p-5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-700">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                Calculate Target Voltage
+            </h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
+                Find the required voltage to hit a target power level.
+            </p>
+            
+            <div class="space-y-4">
+                <!-- Target Power Input -->
+                <div>
+                    <label for="targetPower" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Target Power
+                    </label>
+                    <div class="relative mt-1 rounded-md shadow-sm">
+                        <input type="number" id="targetPower" placeholder="e.g., 100" step="1"
+                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
+                            min="1">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
+                                Watts (W)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resistance Input -->
+                <div>
+                    <label for="resistanceV" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Load Resistance
+                    </label>
+                    <div class="relative mt-1 rounded-md shadow-sm">
+                        <input type="number" id="resistanceV" placeholder="e.g., 4" step="0.1"
+                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
+                            min="0.1">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
+                                Ohms
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Calculation Button -->
+                <button id="calculateVoltageBtn"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
+                    Calculate Target Voltage
+                </button>
+            </div>
+            
+            <!-- Result Display for Voltage -->
+            <div id="result-voltage-container" class="mt-6 p-4 border-t border-gray-300 dark:border-gray-600 text-center hidden">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Required Target RMS Voltage ($V_{RMS}$):
+                </p>
+                <p id="output-voltage" class="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">
+                    0.00 V
+                </p>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Elements for Power Calculation
+            const voltageInput = document.getElementById('rmsVoltage');
+            const resistancePInput = document.getElementById('resistanceP');
+            const calculatePowerBtn = document.getElementById('calculatePowerBtn');
+            const resultPowerContainer = document.getElementById('result-power-container');
+            const outputPower = document.getElementById('output-power');
+            
+            // Elements for Target Voltage Calculation
+            const targetPowerInput = document.getElementById('targetPower');
+            const resistanceVInput = document.getElementById('resistanceV');
+            const calculateVoltageBtn = document.getElementById('calculateVoltageBtn');
+            const resultVoltageContainer = document.getElementById('result-voltage-container');
+            const outputVoltage = document.getElementById('output-voltage');
+
+            // General Error Message (used for both sections)
+            const globalErrorMessage = document.getElementById('error-message');
+
+
+            /**
+             * Performs validation for positive numeric inputs.
+             * @param {number} input1 
+             * @param {number} input2 
+             * @param {string} mode - 'power' or 'voltage'
+             * @returns {boolean} True if inputs are valid, false otherwise.
+             */
+            function validateInputs(input1, input2, mode) {
+                globalErrorMessage.classList.add('hidden');
+                
+                if (isNaN(input1) || isNaN(input2) || input1 <= 0 || input2 <= 0) {
+                    let message = '';
+                    if (mode === 'power') {
+                        message = 'Error in Power Calculation: Please enter valid, positive numbers for Voltage and Resistance.';
+                    } else {
+                        message = 'Error in Voltage Calculation: Please enter valid, positive numbers for Power and Resistance.';
+                    }
+                    globalErrorMessage.textContent = message;
+                    globalErrorMessage.classList.remove('hidden');
+                    return false;
+                }
+                return true;
+            }
+
+            /**
+             * Handles the calculation of RMS Power (Mode 1: P = V^2 / R).
+             */
+            function calculateRmsPower() {
+                // Hide result container for this section
+                resultPowerContainer.classList.add('hidden');
+
+                const V = parseFloat(voltageInput.value);
+                const R = parseFloat(resistancePInput.value);
+
+                if (!validateInputs(V, R, 'power')) return;
+
+                // Calculation: P_RMS = V^2 / R
+                const pRms = (V * V) / R;
+
+                // Display Result
+                outputPower.textContent = `${pRms.toFixed(2)} W`;
+                resultPowerContainer.classList.remove('hidden');
+            }
+
+            /**
+             * Handles the calculation of Target RMS Voltage (Mode 2: V = sqrt(P * R)).
+             */
+            function calculateTargetVoltage() {
+                // Hide result container for this section
+                resultVoltageContainer.classList.add('hidden');
+
+                const P = parseFloat(targetPowerInput.value);
+                const R = parseFloat(resistanceVInput.value);
+
+                if (!validateInputs(P, R, 'voltage')) return;
+
+                // Calculation: V_RMS = sqrt(P * R)
+                const vRms = Math.sqrt(P * R);
+
+                // Display Result
+                outputVoltage.textContent = `${vRms.toFixed(2)} V`;
+                resultVoltageContainer.classList.remove('hidden');
+            }
+
+            // Attach event listeners for calculations
+            calculatePowerBtn.addEventListener('click', calculateRmsPower);
+            calculateVoltageBtn.addEventListener('click', calculateTargetVoltage);
+            
+            // Allow calculation on pressing 'Enter' in input fields
+            voltageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateRmsPower(); });
+            resistancePInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateRmsPower(); });
+            targetPowerInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateTargetVoltage(); });
+            resistanceVInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateTargetVoltage(); });
+
+            // --- Theme Toggling (Basic dark mode simulation) ---
+            const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+</body>
+</html>
