@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amplifier & Slew Rate Calculator</title>
+    <title>Amplifier Diagnostic and Session Report Tool</title>
     <!-- Load Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Use Inter font family -->
@@ -37,7 +37,58 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.1);
         }
+
+        /* --- Styles for Print View (Corrected) --- */
+        @media print {
+            /* 1. Hide everything on the page by default */
+            body * {
+                visibility: hidden;
+            }
+            
+            /* 2. Make the report section and its content visible */
+            #report-section, #report-section * {
+                visibility: visible;
+            }
+            
+            /* 3. Position the report content correctly for printing */
+            #report-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                background: white;
+                color: black;
+                border: none !important;
+                box-shadow: none !important;
+                font-size: 10pt;
+            }
+
+            /* 4. Ensure print-hidden elements are properly removed */
+            .print-hidden, .back-to-menu-btn, .report-header {
+                display: none !important;
+            }
+            
+            /* 5. Ensure all text is black for printing compatibility */
+            h1, h2, h3, p, span, div {
+                color: black !important;
+                background-color: white !important;
+            }
+
+            .report-item {
+                border: 1px solid #ccc;
+                padding: 10px;
+                margin-bottom: 10px;
+                page-break-inside: avoid;
+            }
+        }
     </style>
+    <!-- PDF Generation Libraries -->
+    <!-- html2canvas is used to convert the HTML content to an image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- jsPDF is used to create and save the PDF document -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center p-4">
 
@@ -45,53 +96,39 @@
     <div id="calculator-card" class="w-full max-w-lg bg-white dark:bg-gray-800 shadow-2xl rounded-xl p-8 space-y-8 transition duration-500">
         
         <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white text-center">
-            Amplifier Diagnostics Toolkit
+            Amplifier Diagnostic Toolkit
         </h1>
         
         <p id="error-message" class="text-center text-red-500 text-base font-semibold mb-4 hidden"></p>
 
         <!-- NAVIGATION MENU GRID -->
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 bg-blue-50 dark:bg-gray-700 rounded-lg shadow-inner border border-blue-200 dark:border-gray-600">
-            <!-- Menu Item 1: Power & Peak -->
+        <div id="main-menu" class="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 bg-blue-50 dark:bg-gray-700 rounded-lg shadow-inner border border-blue-200 dark:border-gray-600">
+            <!-- Existing Menu Items -->
             <button class="menu-item bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md border-b-4 border-blue-500 text-sm font-semibold text-gray-700 dark:text-gray-200 text-center flex flex-col items-center justify-center h-20" data-target="power-section">
-                <span class="text-xl">⚡</span>
-                <span class="mt-1">Power & Peak</span>
+                <span class="text-xl">⚡</span><span class="mt-1">Power & Peak</span>
             </button>
-
-            <!-- Menu Item 2: Target Voltage -->
             <button class="menu-item bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md border-b-4 border-teal-500 text-sm font-semibold text-gray-700 dark:text-gray-200 text-center flex flex-col items-center justify-center h-20" data-target="voltage-section">
-                <span class="text-xl">🎯</span>
-                <span class="mt-1">Target Voltage</span>
+                <span class="text-xl">🎯</span><span class="mt-1">Target Voltage</span>
             </button>
-
-            <!-- Menu Item 3: Input Impedance -->
             <button class="menu-item bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md border-b-4 border-orange-500 text-sm font-semibold text-gray-700 dark:text-gray-200 text-center flex flex-col items-center justify-center h-20" data-target="impedance-section">
-                <span class="text-xl">🔌</span>
-                <span class="mt-1">Input Impedance</span>
+                <span class="text-xl">🔌</span><span class="mt-1">Input Impedance</span>
             </button>
-
-            <!-- Menu Item 4: Output Impedance -->
             <button class="menu-item bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md border-b-4 border-red-500 text-sm font-semibold text-gray-700 dark:text-gray-200 text-center flex flex-col items-center justify-center h-20" data-target="output-impedance-section">
-                <span class="text-xl">🔊</span>
-                <span class="mt-1">Output Impedance</span>
+                <span class="text-xl">🔊</span><span class="mt-1">Output Impedance</span>
             </button>
-
-            <!-- Menu Item 5: Damping Factor -->
             <button class="menu-item bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md border-b-4 border-purple-500 text-sm font-semibold text-gray-700 dark:text-gray-200 text-center flex flex-col items-center justify-center h-20" data-target="damping-factor-section">
-                <span class="text-xl">⚙️</span>
-                <span class="mt-1">Damping Factor</span>
+                <span class="text-xl">⚙️</span><span class="mt-1">Damping Factor</span>
             </button>
-
-            <!-- Menu Item 6: Slew Rate -->
             <button class="menu-item bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md border-b-4 border-yellow-500 text-sm font-semibold text-gray-700 dark:text-gray-200 text-center flex flex-col items-center justify-center h-20" data-target="slew-rate-section">
-                <span class="text-xl">⏱️</span>
-                <span class="mt-1">Slew Rate</span>
+                <span class="text-xl">⏱️</span><span class="mt-1">Slew Rate</span>
             </button>
-
-            <!-- Menu Item 7: Gain Calculator -->
             <button class="menu-item bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md border-b-4 border-lime-500 text-sm font-semibold text-gray-700 dark:text-gray-200 text-center flex flex-col items-center justify-center h-20" data-target="gain-section">
-                <span class="text-xl">⬆️</span>
-                <span class="mt-1">Voltage Gain</span>
+                <span class="text-xl">⬆️</span><span class="mt-1">Voltage Gain</span>
+            </button>
+            
+            <!-- NEW: Report Menu Item -->
+            <button id="report-menu-item" class="menu-item bg-blue-600 text-white p-3 rounded-lg shadow-md border-b-4 border-blue-800 text-sm font-semibold text-center flex flex-col items-center justify-center h-20 col-span-2 md:col-span-1" data-target="report-section">
+                <span class="text-xl">📄</span><span class="mt-1">Session Report Log</span>
             </button>
         </div>
         
@@ -141,11 +178,19 @@
                     </div>
                 </div>
                 
-                <!-- Calculation Button -->
-                <button id="calculatePowerBtn"
-                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
-                    Calculate All Outputs
-                </button>
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Calculation Button -->
+                    <button id="calculatePowerBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
+                        Calculate
+                    </button>
+                    <!-- NEW: Save Button -->
+                    <button id="savePowerBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-blue-600 rounded-lg shadow-lg text-lg font-semibold text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-gray-700 transition duration-200 ease-in-out transform active:scale-95 disabled:opacity-50"
+                        disabled>
+                        Save Result
+                    </button>
+                </div>
             </div>
             
             <!-- Result Display for Power and Peak Values -->
@@ -155,10 +200,16 @@
                 </p>
 
                 <div class="result-grid">
-                    <!-- RMS Power -->
+                    <!-- RMS Power (Highlighted) -->
+                    <div class="result-item !bg-green-100 dark:!bg-green-900/40 border-2 border-green-500">
+                        <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">RMS Power</p>
+                        <p id="output-power" class="text-2xl font-extrabold text-green-700 dark:text-green-300 mt-1">0.00 W</p>
+                    </div>
+
+                    <!-- RMS Voltage (New Addition - for reference) -->
                     <div class="result-item">
-                        <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">RMS Power</p>
-                        <p id="output-power" class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">0.00 W</p>
+                        <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">Input RMS Voltage</p>
+                        <p id="output-voltage-rms-display" class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">0.00 V</p>
                     </div>
 
                     <!-- Peak Voltage -->
@@ -230,11 +281,19 @@
                     </div>
                 </div>
 
-                 <!-- Calculation Button -->
-                <button id="calculateVoltageBtn"
-                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
-                    Calculate Target Voltage
-                </button>
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Calculation Button -->
+                    <button id="calculateVoltageBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
+                        Calculate
+                    </button>
+                    <!-- NEW: Save Button -->
+                    <button id="saveVoltageBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-blue-600 rounded-lg shadow-lg text-lg font-semibold text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-gray-700 transition duration-200 ease-in-out transform active:scale-95 disabled:opacity-50"
+                        disabled>
+                        Save Result
+                    </button>
+                </div>
             </div>
             
             <!-- Result Display for Voltage -->
@@ -262,72 +321,28 @@
             </p>
             
             <div class="space-y-4">
-                <!-- Voltage No Load Input -->
-                <div>
-                    <label for="voltageNoLoadIn" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Voltage RMS No Load
-                    </label>
-                    <div class="relative mt-1 rounded-md shadow-sm">
-                        <input type="number" id="voltageNoLoadIn" placeholder="e.g., 0.5" step="0.01"
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
-                            min="0">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
-                                Volts
-                            </span>
-                        </div>
-                    </div>
+                <!-- Inputs... -->
+                <div><label for="voltageNoLoadIn" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Voltage RMS No Load</label><div class="relative mt-1 rounded-md shadow-sm"><input type="number" id="voltageNoLoadIn" placeholder="e.g., 0.5" step="0.01" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg" min="0"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span class="text-gray-500 dark:text-gray-400 sm:text-sm">Volts</span></div></div></div>
+                <div><label for="resistanceKnown" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Known Series Resistor</label><div class="relative mt-1 rounded-md shadow-sm"><input type="number" id="resistanceKnown" placeholder="e.g., 1000" step="1" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg" min="1"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span class="text-gray-500 dark:text-gray-400 sm:text-sm">Ohms</span></div></div></div>
+                <div><label for="voltageLoadIn" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Voltage RMS With Load</label><div class="relative mt-1 rounded-md shadow-sm"><input type="number" id="voltageLoadIn" placeholder="e.g., 0.4" step="0.01" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg" min="0"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span class="text-gray-500 dark:text-gray-400 sm:text-sm">Volts</span></div></div></div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="calculateImpedanceInBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
+                        Calculate
+                    </button>
+                    <button id="saveImpedanceInBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-blue-600 rounded-lg shadow-lg text-lg font-semibold text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-gray-700 transition duration-200 ease-in-out transform active:scale-95 disabled:opacity-50"
+                        disabled>
+                        Save Result
+                    </button>
                 </div>
-
-                <!-- Known Resistance Input -->
-                <div>
-                    <label for="resistanceKnown" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Known Series Resistor
-                    </label>
-                    <div class="relative mt-1 rounded-md shadow-sm">
-                        <input type="number" id="resistanceKnown" placeholder="e.g., 1000" step="1"
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
-                            min="1">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
-                                Ohms
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Voltage Load Input -->
-                <div>
-                    <label for="voltageLoadIn" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Voltage RMS With Load
-                    </label>
-                    <div class="relative mt-1 rounded-md shadow-sm">
-                        <input type="number" id="voltageLoadIn" placeholder="e.g., 0.4" step="0.01"
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
-                            min="0">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
-                                Volts
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                 <!-- Calculation Button -->
-                <button id="calculateImpedanceInBtn"
-                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
-                    Calculate Input Impedance
-                </button>
             </div>
             
             <!-- Result Display for Impedance -->
             <div id="result-impedance-in-container" class="mt-6 p-4 border-t border-gray-300 dark:border-gray-600 text-center hidden">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Calculated Input Impedance:
-                </p>
-                <p id="output-impedance-in" class="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">
-                    0.00 Ohms
-                </p>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Calculated Input Impedance:</p>
+                <p id="output-impedance-in" class="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">0.00 Ohms</p>
             </div>
             <!-- Back to Menu Button -->
             <button class="back-to-menu-btn text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 mt-4 block w-full text-center cursor-pointer transition duration-150">
@@ -345,72 +360,28 @@
             </p>
             
             <div class="space-y-4">
-                <!-- Voltage No Load Input -->
-                <div>
-                    <label for="voltageNoLoadOut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Voltage RMS No Load
-                    </label>
-                    <div class="relative mt-1 rounded-md shadow-sm">
-                        <input type="number" id="voltageNoLoadOut" placeholder="e.g., 20.0" step="0.1"
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
-                            min="0">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
-                                Volts
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                <!-- Inputs... -->
+                <div><label for="voltageNoLoadOut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Voltage RMS No Load</label><div class="relative mt-1 rounded-md shadow-sm"><input type="number" id="voltageNoLoadOut" placeholder="e.g., 20.0" step="0.1" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg" min="0"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span class="text-gray-500 dark:text-gray-400 sm:text-sm">Volts</span></div></div></div>
+                <div><label for="voltageLoadOut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Voltage RMS With Load</label><div class="relative mt-1 rounded-md shadow-sm"><input type="number" id="voltageLoadOut" placeholder="e.g., 18.0" step="0.1" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg" min="0"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span class="text-gray-500 dark:text-gray-400 sm:text-sm">Volts</span></div></div></div>
+                <div><label for="resistanceLoadOut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Load Resistance</label><div class="relative mt-1 rounded-md shadow-sm"><input type="number" id="resistanceLoadOut" placeholder="e.g., 4" step="0.1" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg" min="0.1"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span class="text-gray-500 dark:text-gray-400 sm:text-sm">Ohms</span></div></div></div>
 
-                <!-- Voltage Load Input -->
-                <div>
-                    <label for="voltageLoadOut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Voltage RMS With Load
-                    </label>
-                    <div class="relative mt-1 rounded-md shadow-sm">
-                        <input type="number" id="voltageLoadOut" placeholder="e.g., 18.0" step="0.1"
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
-                            min="0">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
-                                Volts
-                            </span>
-                        </div>
-                    </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="calculateImpedanceOutBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
+                        Calculate
+                    </button>
+                    <button id="saveImpedanceOutBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-blue-600 rounded-lg shadow-lg text-lg font-semibold text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-gray-700 transition duration-200 ease-in-out transform active:scale-95 disabled:opacity-50"
+                        disabled>
+                        Save Result
+                    </button>
                 </div>
-                
-                <!-- Load Resistance Input -->
-                <div>
-                    <label for="resistanceLoadOut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Load Resistance
-                    </label>
-                    <div class="relative mt-1 rounded-md shadow-sm">
-                        <input type="number" id="resistanceLoadOut" placeholder="e.g., 4" step="0.1"
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
-                            min="0.1">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
-                                Ohms
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                 <!-- Calculation Button -->
-                <button id="calculateImpedanceOutBtn"
-                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
-                    Calculate Output Impedance
-                </button>
             </div>
             
             <!-- Result Display for Impedance -->
             <div id="result-impedance-out-container" class="mt-6 p-4 border-t border-gray-300 dark:border-gray-600 text-center hidden">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Calculated Output Impedance:
-                </p>
-                <p id="output-impedance-out" class="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">
-                    0.00 Ohms
-                </p>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Calculated Output Impedance:</p>
+                <p id="output-impedance-out" class="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">0.00 Ohms</p>
             </div>
             <!-- Back to Menu Button -->
             <button class="back-to-menu-btn text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 mt-4 block w-full text-center cursor-pointer transition duration-150">
@@ -428,58 +399,28 @@
             </p>
             
             <div class="space-y-4">
-                <!-- Load Resistance Input -->
-                <div>
-                    <label for="resistanceLoadDF" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Load Resistance Speaker Ohms
-                    </label>
-                    <div class="relative mt-1 rounded-md shadow-sm">
-                        <input type="number" id="resistanceLoadDF" placeholder="e.g., 8" step="0.1"
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
-                            min="0.1">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
-                                Ohms
-                            </span>
-                        </div>
-                    </div>
+                <!-- Inputs... -->
+                <div><label for="resistanceLoadDF" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Load Resistance Speaker Ohms</label><div class="relative mt-1 rounded-md shadow-sm"><input type="number" id="resistanceLoadDF" placeholder="e.g., 8" step="0.1" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg" min="0.1"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span class="text-gray-500 dark:text-gray-400 sm:text-sm">Ohms</span></div></div></div>
+                <div><label for="impedanceOutputDF" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amplifier Output Impedance</label><div class="relative mt-1 rounded-md shadow-sm"><input type="number" id="impedanceOutputDF" placeholder="e.g., 0.05" step="0.001" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg" min="0.001"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span class="text-gray-500 dark:text-gray-400 sm:text-sm">Ohms</span></div></div></div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="calculateDampingFactorBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
+                        Calculate
+                    </button>
+                    <button id="saveDampingFactorBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-blue-600 rounded-lg shadow-lg text-lg font-semibold text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-gray-700 transition duration-200 ease-in-out transform active:scale-95 disabled:opacity-50"
+                        disabled>
+                        Save Result
+                    </button>
                 </div>
-
-                <!-- Output Impedance Input -->
-                <div>
-                    <label for="impedanceOutputDF" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Amplifier Output Impedance
-                    </label>
-                    <div class="relative mt-1 rounded-md shadow-sm">
-                        <input type="number" id="impedanceOutputDF" placeholder="e.g., 0.05" step="0.001"
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
-                            min="0.001">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
-                                Ohms
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                 <!-- Calculation Button -->
-                <button id="calculateDampingFactorBtn"
-                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
-                    Calculate Damping Factor
-                </button>
             </div>
             
             <!-- Result Display for Damping Factor -->
             <div id="result-damping-factor-container" class="mt-6 p-4 border-t border-gray-300 dark:border-gray-600 text-center hidden">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Calculated Damping Factor:
-                </p>
-                <p id="output-damping-factor" class="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">
-                    0.00
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Value is unitless
-                </p>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Calculated Damping Factor:</p>
+                <p id="output-damping-factor" class="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">0.00</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Value is unitless</p>
             </div>
             <!-- Back to Menu Button -->
             <button class="back-to-menu-btn text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 mt-4 block w-full text-center cursor-pointer transition duration-150">
@@ -497,58 +438,28 @@
             </p>
             
             <div class="space-y-4">
-                <!-- Total Voltage Change Input -->
-                <div>
-                    <label for="voltageChangeSR" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Total Voltage Change
-                    </label>
-                    <div class="relative mt-1 rounded-md shadow-sm">
-                        <input type="number" id="voltageChangeSR" placeholder="e.g., 20" step="0.1"
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
-                            min="0.1">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
-                                Volts
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                <!-- Inputs... -->
+                <div><label for="voltageChangeSR" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Voltage Change</label><div class="relative mt-1 rounded-md shadow-sm"><input type="number" id="voltageChangeSR" placeholder="e.g., 20" step="0.1" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg" min="0.1"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span class="text-gray-500 dark:text-gray-400 sm:text-sm">Volts</span></div></div></div>
+                <div><label for="riseTimeSR" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rise Time e.g., 10% to 90% point</label><div class="relative mt-1 rounded-md shadow-sm"><input type="number" id="riseTimeSR" placeholder="e.g., 4" step="0.1" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg" min="0.01"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span class="text-gray-500 dark:text-gray-400 sm:text-sm">µs Microseconds</span></div></div></div>
 
-                <!-- Rise Time Input -->
-                <div>
-                    <label for="riseTimeSR" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Rise Time e.g., 10% to 90% point
-                    </label>
-                    <div class="relative mt-1 rounded-md shadow-sm">
-                        <input type="number" id="riseTimeSR" placeholder="e.g., 4" step="0.1"
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
-                            min="0.01">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
-                                µs Microseconds
-                            </span>
-                        </div>
-                    </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="calculateSlewRateBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
+                        Calculate
+                    </button>
+                    <button id="saveSlewRateBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-blue-600 rounded-lg shadow-lg text-lg font-semibold text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-gray-700 transition duration-200 ease-in-out transform active:scale-95 disabled:opacity-50"
+                        disabled>
+                        Save Result
+                    </button>
                 </div>
-
-                 <!-- Calculation Button -->
-                <button id="calculateSlewRateBtn"
-                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
-                    Calculate Slew Rate
-                </button>
             </div>
             
             <!-- Result Display for Slew Rate -->
             <div id="result-slew-rate-container" class="mt-6 p-4 border-t border-gray-300 dark:border-gray-600 text-center hidden">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Calculated Slew Rate:
-                </p>
-                <p id="output-slew-rate" class="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">
-                    0.00 V/µs
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Volts per microsecond
-                </p>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Calculated Slew Rate:</p>
+                <p id="output-slew-rate" class="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">0.00 V/µs</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Volts per microsecond</p>
             </div>
             <!-- Back to Menu Button -->
             <button class="back-to-menu-btn text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 mt-4 block w-full text-center cursor-pointer transition duration-150">
@@ -566,52 +477,26 @@
             </p>
             
             <div class="space-y-4">
-                <!-- Input Voltage -->
-                <div>
-                    <label for="inputVoltageIn" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Input RMS Voltage $$V_{in}$$
-                    </label>
-                    <div class="relative mt-1 rounded-md shadow-sm">
-                        <input type="number" id="inputVoltageIn" placeholder="e.g., 0.5" step="0.01"
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
-                            min="0.000001">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
-                                Volts
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                <!-- Inputs... -->
+                <div><label for="inputVoltageIn" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Input RMS Voltage $$V_{in}$$</label><div class="relative mt-1 rounded-md shadow-sm"><input type="number" id="inputVoltageIn" placeholder="e.g., 0.5" step="0.01" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg" min="0.000001"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span class="text-gray-500 dark:text-gray-400 sm:text-sm">Volts</span></div></div></div>
+                <div><label for="inputVoltageOut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Output RMS Voltage $$V_{out}$$</label><div class="relative mt-1 rounded-md shadow-sm"><input type="number" id="inputVoltageOut" placeholder="e.g., 10.0" step="0.1" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg" min="0"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span class="text-gray-500 dark:text-gray-400 sm:text-sm">Volts</span></div></div></div>
 
-                <!-- Output Voltage -->
-                <div>
-                    <label for="inputVoltageOut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Output RMS Voltage $$V_{out}$$
-                    </label>
-                    <div class="relative mt-1 rounded-md shadow-sm">
-                        <input type="number" id="inputVoltageOut" placeholder="e.g., 10.0" step="0.1"
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 pr-16 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 transition duration-150 sm:text-lg"
-                            min="0">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400 sm:text-sm">
-                                Volts
-                            </span>
-                        </div>
-                    </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="calculateGainBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
+                        Calculate
+                    </button>
+                    <button id="saveGainBtn"
+                        class="w-full flex justify-center py-3 px-4 border border-lime-600 rounded-lg shadow-lg text-lg font-semibold text-lime-600 bg-white hover:bg-lime-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 dark:bg-gray-800 dark:text-lime-400 dark:border-lime-400 dark:hover:bg-gray-700 transition duration-200 ease-in-out transform active:scale-95 disabled:opacity-50"
+                        disabled>
+                        Save Result
+                    </button>
                 </div>
-
-                 <!-- Calculation Button -->
-                <button id="calculateGainBtn"
-                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95">
-                    Calculate Voltage Gain
-                </button>
             </div>
             
             <!-- Result Display for Gain -->
             <div id="result-gain-container" class="mt-6 p-4 border-t border-gray-300 dark:border-gray-600 text-center hidden">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
-                    Calculated Voltage Gain:
-                </p>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Calculated Voltage Gain:</p>
                 <div class="result-grid">
                     <!-- Gain Ratio -->
                     <div class="result-item">
@@ -632,108 +517,211 @@
             </button>
         </div>
 
+        <!-- 8. SESSION REPORT LOG (NEW) -->
+        <div id="report-section" class="p-5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-700">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                Session Report Log
+            </h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-5 print-hidden">
+                This log contains all results saved during this session. Use the buttons below to generate a printable or downloadable report.
+            </p>
+            
+            <div id="report-content" class="space-y-4 border-t pt-4 border-gray-300 dark:border-gray-600">
+                <!-- Report items will be injected here -->
+                <p id="empty-report-message" class="text-center text-gray-500 dark:text-gray-400 italic">No results saved yet.</p>
+            </div>
+
+            <div class="mt-6 print-hidden grid grid-cols-2 gap-3">
+                <button id="printReportBtn"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95 disabled:opacity-50"
+                    disabled>
+                    Print Report
+                </button>
+                
+                <!-- Download Button (UPDATED FOR PDF) -->
+                <button id="downloadPdfBtn"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-gray-900 transition duration-200 ease-in-out transform active:scale-95 disabled:opacity-50"
+                    disabled>
+                    Download as PDF
+                </button>
+            </div>
+            
+            <!-- Back to Menu Button -->
+            <button class="back-to-menu-btn text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 mt-4 block w-full text-center cursor-pointer transition duration-150 print-hidden">
+                ← Back to Menu
+            </button>
+        </div>
+
     </div>
 
     <script>
+        // Initialize jsPDF globally from the UMD bundle
+        const { jsPDF } = window.jspdf;
+
         document.addEventListener('DOMContentLoaded', () => {
+            // --- Global State & Initialization ---
+            const globalErrorMessage = document.getElementById('error-message');
+            // Stores all saved results for the current session
+            let sessionResults = []; 
+            const printReportBtn = document.getElementById('printReportBtn');
+            const downloadPdfBtn = document.getElementById('downloadPdfBtn'); // Updated button ID
+            const reportContent = document.getElementById('report-content');
+            const saveButtons = document.querySelectorAll('[id^="save"]');
+
             // --- Navigation Logic ---
             const menuItems = document.querySelectorAll('.menu-item');
             const backToMenuBtns = document.querySelectorAll('.back-to-menu-btn');
             
-            // Function to scroll to the top
             function scrollToTop() {
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
-            // Menu item click: Scroll to section
             menuItems.forEach(item => {
                 item.addEventListener('click', () => {
                     const targetId = item.getAttribute('data-target');
                     const targetElement = document.getElementById(targetId);
-
+                    if (targetId === 'report-section') {
+                        generateReport();
+                    }
                     if (targetElement) {
-                        targetElement.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start' // Scroll to the top of the element
-                        });
+                        // The user will see a smooth scroll to the target section
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
                 });
             });
 
-            // Back to menu button click: Scroll to top
             backToMenuBtns.forEach(btn => {
                 btn.addEventListener('click', scrollToTop);
             });
 
+            // --- Reporting and Printing Logic ---
 
-            // Elements for Power Calculation
-            const voltageInput = document.getElementById('rmsVoltage');
-            const resistancePInput = document.getElementById('resistanceP');
-            const calculatePowerBtn = document.getElementById('calculatePowerBtn');
-            const resultPowerContainer = document.getElementById('result-power-container');
-            const outputPower = document.getElementById('output-power');
-            // Elements for Peak Values
-            const outputVoltagePeak = document.getElementById('output-voltage-peak');
-            const outputVoltagePTP = document.getElementById('output-voltage-ptp');
-            const outputCurrentPeak = document.getElementById('output-current-peak');
+            /**
+             * Generates the report content by iterating over sessionResults array.
+             */
+            function generateReport() {
+                const hasResults = sessionResults.length > 0;
+                printReportBtn.disabled = !hasResults;
+                downloadPdfBtn.disabled = !hasResults; // Control PDF button state
+
+                if (!hasResults) {
+                    reportContent.innerHTML = `<p id="empty-report-message" class="text-center text-gray-500 dark:text-gray-400 italic">No results saved yet.</p>`;
+                    return;
+                }
+
+                
+                const reportHtml = sessionResults.map((result, index) => {
+                    // Convert the input/output object into a readable list
+                    const detailsHtml = Object.entries(result.details)
+                        .map(([key, value]) => `
+                            <p class="text-sm font-normal text-gray-700 dark:text-gray-300">
+                                <span class="font-semibold">${key}:</span> ${value}
+                            </p>
+                        `).join('');
+
+                    return `
+                        <div class="report-item p-4 border rounded-lg shadow-md bg-white dark:bg-gray-800 transition duration-150">
+                            <h3 class="text-lg font-bold text-blue-600 dark:text-blue-400 mb-2">${index + 1}. ${result.title}</h3>
+                            ${detailsHtml}
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Saved: ${result.timestamp}</p>
+                        </div>
+                    `;
+                }).join('');
+
+                reportContent.innerHTML = reportHtml;
+            }
+
+            /**
+             * Triggers the browser's print dialog, which is styled by the @media print CSS block.
+             */
+            function printReport() {
+                window.print();
+            }
             
-            // Elements for Target Voltage Calculation
-            const targetPowerInput = document.getElementById('targetPower');
-            const resistanceVInput = document.getElementById('resistanceV');
-            const calculateVoltageBtn = document.getElementById('calculateVoltageBtn');
-            const resultVoltageContainer = document.getElementById('result-voltage-container');
-            const outputVoltage = document.getElementById('output-voltage');
+            /**
+             * Generates a PDF from the report content using html2canvas and jspdf.
+             */
+            function downloadReportAsPdf() {
+                const reportElement = document.getElementById('report-section');
+                
+                // Temporarily hide buttons and other non-report elements inside the section for a clean screenshot
+                const hiddenElements = reportElement.querySelectorAll('.print-hidden');
+                hiddenElements.forEach(el => el.style.display = 'none');
+                
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
 
-            // Elements for Input Impedance Calculation
-            const voltageNoLoadInInput = document.getElementById('voltageNoLoadIn');
-            const resistanceKnownInput = document.getElementById('resistanceKnown');
-            const voltageLoadInInput = document.getElementById('voltageLoadIn');
-            const calculateImpedanceInBtn = document.getElementById('calculateImpedanceInBtn');
-            const resultImpedanceInContainer = document.getElementById('result-impedance-in-container');
-            const outputImpedanceIn = document.getElementById('output-impedance-in');
+                html2canvas(reportElement, {
+                    scale: 2, // Increase scale for higher resolution
+                    useCORS: true,
+                    logging: false,
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = 210; // A4 width in mm
+                    const pageHeight = 295; // A4 height in mm
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+                    let heightLeft = imgHeight;
+                    let position = 0;
 
-            // Elements for Output Impedance Calculation
-            const voltageNoLoadOutInput = document.getElementById('voltageNoLoadOut');
-            const voltageLoadOutInput = document.getElementById('voltageLoadOut');
-            const resistanceLoadOutInput = document.getElementById('resistanceLoadOut');
-            const calculateImpedanceOutBtn = document.getElementById('calculateImpedanceOutBtn');
-            const resultImpedanceOutContainer = document.getElementById('result-impedance-out-container');
-            const outputImpedanceOut = document.getElementById('output-impedance-out');
+                    // Add image to PDF
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
 
-            // Elements for Damping Factor Calculation
-            const resistanceLoadDFInput = document.getElementById('resistanceLoadDF');
-            const impedanceOutputDFInput = document.getElementById('impedanceOutputDF');
-            const calculateDampingFactorBtn = document.getElementById('calculateDampingFactorBtn');
-            const resultDampingFactorContainer = document.getElementById('result-damping-factor-container');
-            const outputDampingFactor = document.getElementById('output-damping-factor');
+                    // Handle multi-page content (for large reports)
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                    
+                    const now = new Date();
+                    const filename = `Amplifier_Diagnostic_Report_${now.toISOString().slice(0, 10).replace(/-/g, '')}.pdf`;
+                    pdf.save(filename);
 
-            // Elements for Slew Rate Calculation
-            const voltageChangeSRInput = document.getElementById('voltageChangeSR');
-            const riseTimeSRInput = document.getElementById('riseTimeSR');
-            const calculateSlewRateBtn = document.getElementById('calculateSlewRateBtn');
-            const resultSlewRateContainer = document.getElementById('result-slew-rate-container'); 
-            const outputSlewRate = document.getElementById('output-slew-rate');
+                }).catch(error => {
+                    console.error("PDF generation failed:", error);
+                    globalErrorMessage.textContent = 'Error: Failed to generate PDF. Check console for details.';
+                    globalErrorMessage.classList.remove('hidden');
+                }).finally(() => {
+                    // Restore visibility of hidden elements
+                    hiddenElements.forEach(el => el.style.display = '');
+                });
+            }
 
-            // --- New Elements for Gain Calculation ---
-            const inputVoltageIn = document.getElementById('inputVoltageIn');
-            const inputVoltageOut = document.getElementById('inputVoltageOut');
-            const calculateGainBtn = document.getElementById('calculateGainBtn');
-            const resultGainContainer = document.getElementById('result-gain-container');
-            const outputGainRatio = document.getElementById('output-gain-ratio');
-            const outputGainDB = document.getElementById('output-gain-db');
-            
-            // General Error Message (used for all sections)
-            const globalErrorMessage = document.getElementById('error-message');
+            printReportBtn.addEventListener('click', printReport);
+            downloadPdfBtn.addEventListener('click', downloadReportAsPdf);
+
+
+            // --- Calculation Functions & Save Handlers ---
+
+            /**
+             * Stores a calculation result in the sessionResults array.
+             * @param {string} title The title of the calculation (e.g., "RMS Power Calculation").
+             * @param {object} details An object containing key-value pairs of inputs and outputs.
+             */
+            function saveResult(title, details) {
+                const now = new Date();
+                const timestamp = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+
+                sessionResults.push({
+                    title,
+                    timestamp,
+                    details
+                });
+                
+                // Ensure print and download buttons are enabled
+                printReportBtn.disabled = false;
+                downloadPdfBtn.disabled = false;
+                
+                // Call generateReport() here to immediately update the Session Report Log
+                generateReport();
+            }
 
 
             /**
              * Performs validation for positive numeric inputs and voltage comparisons.
-             * @param {number[]} inputs - Array of input values.
-             * @param {string} mode - 'power', 'voltage', 'in_impedance', 'out_impedance', 'damping_factor', 'slew_rate', or 'gain'.
-             * @returns {boolean} True if inputs are valid, false otherwise.
              */
             function validateInputs(inputs, mode) {
                 globalErrorMessage.classList.add('hidden');
@@ -744,21 +732,14 @@
                 if (!areAllPositive) {
                     let message = `Error in ${mode.toUpperCase().replace('_', ' ')} Calculation: Please enter valid, positive numbers for all fields.`;
                     
-                    // Special case for Gain: Input Voltage (Vin) must be non-zero
                     if (mode === 'gain') {
                         const V_IN = inputs[0];
                         if (V_IN <= 0 || isNaN(V_IN)) {
-                            message = 'Error in Gain Calculation: Input Voltage ($$V_{in}$$) must be a positive number (greater than 0).';
+                            message = 'Error in Gain Calculation: Input Voltage ($$V_{in}$$) must be a positive number.';
                         } else if (isNaN(inputs[1]) || inputs[1] < 0) {
                             message = 'Error in Gain Calculation: Output Voltage ($$V_{out}$$) must be a positive number or zero.';
-                        } else {
-                            // If V_in is valid, V_out is non-negative, and it failed the initial check,
-                            // it means one of the other checks (like V_NL > V_L) failed, which shouldn't happen here.
-                            // Re-evaluate positive check for V_out if it should be allowed to be 0 (for 0dB or less).
-                            // For voltage gain, Vout can be 0, so only V_in must be positive.
-                            if (inputs[0] > 0 && inputs[1] >= 0) {
-                                return true; // Valid for Gain
-                            }
+                        } else if (V_IN > 0 && inputs[1] >= 0) {
+                            return true; // Valid for Gain
                         }
                     } 
 
@@ -767,11 +748,8 @@
                     return false;
                 }
 
-                // Specific validation for Impedance calculations (V_NL must be > V_L)
                 if (mode === 'in_impedance' || mode === 'out_impedance') {
-                    // V_NL is the first input element in the array for these modes
                     const V_NL = inputs[0]; 
-                    // V_L is the voltage with load
                     const V_L = mode === 'in_impedance' ? inputs[2] : inputs[1];
 
                     if (V_NL <= V_L) {
@@ -783,62 +761,108 @@
                 return true;
             }
 
-            /**
-             * Handles the calculation of RMS Power (P = V^2 / R) and related peak values.
-             */
+            // --- Power Calculation ---
+            const voltageInput = document.getElementById('rmsVoltage');
+            const resistancePInput = document.getElementById('resistanceP');
+            const calculatePowerBtn = document.getElementById('calculatePowerBtn');
+            const savePowerBtn = document.getElementById('savePowerBtn');
+            const resultPowerContainer = document.getElementById('result-power-container');
+            let lastPowerResult = null; // Store the last result to be saved
+
             function calculateRmsPower() {
                 resultPowerContainer.classList.add('hidden');
+                savePowerBtn.disabled = true;
 
                 const V_rms = parseFloat(voltageInput.value);
                 const R = parseFloat(resistancePInput.value);
 
                 if (!validateInputs([V_rms, R], 'power')) return;
 
-                // 1. RMS Power: P_RMS = V_rms^2 / R
                 const pRms = (V_rms * V_rms) / R;
-
-                // 2. Peak Voltage: V_peak = V_rms * sqrt(2)
                 const V_peak = V_rms * Math.sqrt(2);
-
-                // 3. Peak-to-Peak Voltage: V_ptp = 2 * V_peak
                 const V_ptp = 2 * V_peak;
-
-                // 4. Peak Current: I_peak = V_peak / R
                 const I_peak = V_peak / R;
 
-
-                // Update Output Fields
-                outputPower.textContent = `${pRms.toFixed(2)} W`;
-                outputVoltagePeak.textContent = `${V_peak.toFixed(2)} V`;
-                outputVoltagePTP.textContent = `${V_ptp.toFixed(2)} V`;
-                outputCurrentPeak.textContent = `${I_peak.toFixed(2)} A`;
+                document.getElementById('output-power').textContent = `${pRms.toFixed(2)} W`;
+                document.getElementById('output-voltage-rms-display').textContent = `${V_rms.toFixed(2)} V`;
+                document.getElementById('output-voltage-peak').textContent = `${V_peak.toFixed(2)} V`;
+                document.getElementById('output-voltage-ptp').textContent = `${V_ptp.toFixed(2)} V`;
+                document.getElementById('output-current-peak').textContent = `${I_peak.toFixed(2)} A`;
                 
+                // Store result object for saving
+                lastPowerResult = {
+                    'Input RMS Voltage': `${V_rms.toFixed(2)} V`,
+                    'Load Resistance': `${R.toFixed(1)} Ω`,
+                    'RMS Power (Result)': `${pRms.toFixed(2)} W`,
+                    'Peak Voltage': `${V_peak.toFixed(2)} V`,
+                    'P-T-P Voltage': `${V_ptp.toFixed(2)} V`,
+                    'Peak Current': `${I_peak.toFixed(2)} A`,
+                };
+
                 resultPowerContainer.classList.remove('hidden');
+                savePowerBtn.disabled = false;
             }
 
-            /**
-             * Handles the calculation of Target RMS Voltage (V = sqrt(P * R)).
-             */
+            savePowerBtn.addEventListener('click', () => {
+                if (lastPowerResult) {
+                    saveResult('RMS Power and Peak Output Calculation', lastPowerResult);
+                    savePowerBtn.disabled = true; // Disable after saving
+                }
+            });
+            calculatePowerBtn.addEventListener('click', calculateRmsPower);
+
+
+            // --- Target Voltage Calculation ---
+            const targetPowerInput = document.getElementById('targetPower');
+            const resistanceVInput = document.getElementById('resistanceV');
+            const calculateVoltageBtn = document.getElementById('calculateVoltageBtn');
+            const saveVoltageBtn = document.getElementById('saveVoltageBtn');
+            const resultVoltageContainer = document.getElementById('result-voltage-container');
+            let lastVoltageResult = null;
+
             function calculateTargetVoltage() {
                 resultVoltageContainer.classList.add('hidden');
+                saveVoltageBtn.disabled = true;
 
                 const P = parseFloat(targetPowerInput.value);
                 const R = parseFloat(resistanceVInput.value);
 
                 if (!validateInputs([P, R], 'voltage')) return;
 
-                // Calculation: V_RMS = sqrt(P * R)
                 const vRms = Math.sqrt(P * R);
 
-                outputVoltage.textContent = `${vRms.toFixed(2)} V`;
+                document.getElementById('output-voltage').textContent = `${vRms.toFixed(2)} V`;
+                
+                lastVoltageResult = {
+                    'Target Power': `${P.toFixed(0)} W`,
+                    'Load Resistance': `${R.toFixed(1)} Ω`,
+                    'Required Target RMS Voltage': `${vRms.toFixed(2)} V`,
+                };
+
                 resultVoltageContainer.classList.remove('hidden');
+                saveVoltageBtn.disabled = false;
             }
 
-            /**
-             * Handles the calculation of Input Impedance (Zin = Rk * (Vl / (Vnl - Vl))).
-             */
+            saveVoltageBtn.addEventListener('click', () => {
+                if (lastVoltageResult) {
+                    saveResult('Target Voltage Calculation', lastVoltageResult);
+                    saveVoltageBtn.disabled = true;
+                }
+            });
+            calculateVoltageBtn.addEventListener('click', calculateTargetVoltage);
+            
+            // --- Input Impedance Calculation ---
+            const voltageNoLoadInInput = document.getElementById('voltageNoLoadIn');
+            const resistanceKnownInput = document.getElementById('resistanceKnown');
+            const voltageLoadInInput = document.getElementById('voltageLoadIn');
+            const calculateImpedanceInBtn = document.getElementById('calculateImpedanceInBtn');
+            const saveImpedanceInBtn = document.getElementById('saveImpedanceInBtn');
+            const resultImpedanceInContainer = document.getElementById('result-impedance-in-container');
+            let lastImpedanceInResult = null;
+
             function calculateInputImpedance() {
                 resultImpedanceInContainer.classList.add('hidden');
+                saveImpedanceInBtn.disabled = true;
 
                 const V_NL = parseFloat(voltageNoLoadInInput.value);
                 const R_K = parseFloat(resistanceKnownInput.value);
@@ -846,145 +870,220 @@
 
                 if (!validateInputs([V_NL, R_K, V_L], 'in_impedance')) return;
 
-                // Calculation: Zin = Rk * (Vl / (Vnl - Vl))
                 const Z_IN = R_K * (V_L / (V_NL - V_L));
 
-                outputImpedanceIn.textContent = `${Z_IN.toFixed(2)} Ohms`;
-                resultImpedanceInContainer.classList.remove('hidden');
-            }
+                document.getElementById('output-impedance-in').textContent = `${Z_IN.toFixed(2)} Ohms`;
+                
+                lastImpedanceInResult = {
+                    'Voltage No Load': `${V_NL.toFixed(2)} V`,
+                    'Known Series Resistor': `${R_K.toFixed(0)} Ω`,
+                    'Voltage With Load': `${V_L.toFixed(2)} V`,
+                    'Calculated Input Impedance': `${Z_IN.toFixed(2)} Ω`,
+                };
 
-            /**
-             * Handles the calculation of Output Impedance (Zout = RL * ((Vnl / Vl) - 1)).
-             */
+                resultImpedanceInContainer.classList.remove('hidden');
+                saveImpedanceInBtn.disabled = false;
+            }
+            saveImpedanceInBtn.addEventListener('click', () => {
+                if (lastImpedanceInResult) {
+                    saveResult('Input Impedance Calculation', lastImpedanceInResult);
+                    saveImpedanceInBtn.disabled = true;
+                }
+            });
+            calculateImpedanceInBtn.addEventListener('click', calculateInputImpedance);
+
+            // --- Output Impedance Calculation ---
+            const voltageNoLoadOutInput = document.getElementById('voltageNoLoadOut');
+            const voltageLoadOutInput = document.getElementById('voltageLoadOut');
+            const resistanceLoadOutInput = document.getElementById('resistanceLoadOut');
+            const calculateImpedanceOutBtn = document.getElementById('calculateImpedanceOutBtn');
+            const saveImpedanceOutBtn = document.getElementById('saveImpedanceOutBtn');
+            const resultImpedanceOutContainer = document.getElementById('result-impedance-out-container');
+            let lastImpedanceOutResult = null;
+
             function calculateOutputImpedance() {
                 resultImpedanceOutContainer.classList.add('hidden');
+                saveImpedanceOutBtn.disabled = true;
 
                 const V_NL = parseFloat(voltageNoLoadOutInput.value);
                 const V_L = parseFloat(voltageLoadOutInput.value);
                 const R_L = parseFloat(resistanceLoadOutInput.value);
 
-                // Inputs for validation: [V_NL, V_L, R_L] 
                 if (!validateInputs([V_NL, V_L, R_L], 'out_impedance')) return;
 
-                // Calculation: Zout = R_L * ((V_NL / V_L) - 1)
                 const Z_OUT = R_L * ((V_NL / V_L) - 1);
 
-                outputImpedanceOut.textContent = `${Z_OUT.toFixed(3)} Ohms`; // 3 decimal places for small impedance values
-                resultImpedanceOutContainer.classList.remove('hidden');
-            }
+                document.getElementById('output-impedance-out').textContent = `${Z_OUT.toFixed(3)} Ohms`;
 
-            /**
-             * Handles the calculation of Damping Factor (DF = RL / Zout).
-             */
+                lastImpedanceOutResult = {
+                    'Voltage No Load': `${V_NL.toFixed(1)} V`,
+                    'Voltage With Load': `${V_L.toFixed(1)} V`,
+                    'Load Resistance': `${R_L.toFixed(1)} Ω`,
+                    'Calculated Output Impedance': `${Z_OUT.toFixed(3)} Ω`,
+                };
+                
+                resultImpedanceOutContainer.classList.remove('hidden');
+                saveImpedanceOutBtn.disabled = false;
+            }
+            saveImpedanceOutBtn.addEventListener('click', () => {
+                if (lastImpedanceOutResult) {
+                    saveResult('Output Impedance Calculation', lastImpedanceOutResult);
+                    saveImpedanceOutBtn.disabled = true;
+                }
+            });
+            calculateImpedanceOutBtn.addEventListener('click', calculateOutputImpedance);
+
+            // --- Damping Factor Calculation ---
+            const resistanceLoadDFInput = document.getElementById('resistanceLoadDF');
+            const impedanceOutputDFInput = document.getElementById('impedanceOutputDF');
+            const calculateDampingFactorBtn = document.getElementById('calculateDampingFactorBtn');
+            const saveDampingFactorBtn = document.getElementById('saveDampingFactorBtn');
+            const resultDampingFactorContainer = document.getElementById('result-damping-factor-container');
+            let lastDampingFactorResult = null;
+
             function calculateDampingFactor() {
                 resultDampingFactorContainer.classList.add('hidden');
+                saveDampingFactorBtn.disabled = true;
 
                 const R_L = parseFloat(resistanceLoadDFInput.value);
                 const Z_OUT = parseFloat(impedanceOutputDFInput.value);
 
                 if (!validateInputs([R_L, Z_OUT], 'damping_factor')) return;
 
-                // Calculation: DF = RL / Zout
                 const DF = R_L / Z_OUT;
 
-                outputDampingFactor.textContent = `${DF.toFixed(2)}`;
-                resultDampingFactorContainer.classList.remove('hidden');
-            }
+                document.getElementById('output-damping-factor').textContent = `${DF.toFixed(2)}`;
 
-            /**
-             * Handles the calculation of Slew Rate (SR = Delta V / Delta t).
-             */
+                lastDampingFactorResult = {
+                    'Load Resistance (Speaker)': `${R_L.toFixed(1)} Ω`,
+                    'Amplifier Output Impedance': `${Z_OUT.toFixed(3)} Ω`,
+                    'Calculated Damping Factor': `${DF.toFixed(2)} (unitless)`,
+                };
+                
+                resultDampingFactorContainer.classList.remove('hidden');
+                saveDampingFactorBtn.disabled = false;
+            }
+            saveDampingFactorBtn.addEventListener('click', () => {
+                if (lastDampingFactorResult) {
+                    saveResult('Damping Factor Calculation', lastDampingFactorResult);
+                    saveDampingFactorBtn.disabled = true;
+                }
+            });
+            calculateDampingFactorBtn.addEventListener('click', calculateDampingFactor);
+
+            // --- Slew Rate Calculation ---
+            const voltageChangeSRInput = document.getElementById('voltageChangeSR');
+            const riseTimeSRInput = document.getElementById('riseTimeSR');
+            const calculateSlewRateBtn = document.getElementById('calculateSlewRateBtn');
+            const saveSlewRateBtn = document.getElementById('saveSlewRateBtn');
+            const resultSlewRateContainer = document.getElementById('result-slew-rate-container'); 
+            let lastSlewRateResult = null;
+
             function calculateSlewRate() {
                 resultSlewRateContainer.classList.add('hidden');
+                saveSlewRateBtn.disabled = true;
 
-                const deltaV = parseFloat(voltageChangeSRInput.value); // Voltage Change (Volts)
-                const deltaT = parseFloat(riseTimeSRInput.value);      // Rise Time (Microseconds)
+                const deltaV = parseFloat(voltageChangeSRInput.value);
+                const deltaT = parseFloat(riseTimeSRInput.value);
 
-                // The calculation is simple division since units (V and µs) align with the required output unit (V/µs)
                 if (!validateInputs([deltaV, deltaT], 'slew_rate')) return;
 
-                // Calculation: SR = Delta V / Delta t
                 const SR_V_per_uS = deltaV / deltaT;
 
-                outputSlewRate.textContent = `${SR_V_per_uS.toFixed(2)} V/µs`;
+                document.getElementById('output-slew-rate').textContent = `${SR_V_per_uS.toFixed(2)} V/µs`;
+
+                lastSlewRateResult = {
+                    'Total Voltage Change': `${deltaV.toFixed(1)} V`,
+                    'Rise Time': `${deltaT.toFixed(1)} µs`,
+                    'Calculated Slew Rate': `${SR_V_per_uS.toFixed(2)} V/µs`,
+                };
+                
                 resultSlewRateContainer.classList.remove('hidden');
+                saveSlewRateBtn.disabled = false;
             }
+            saveSlewRateBtn.addEventListener('click', () => {
+                if (lastSlewRateResult) {
+                    saveResult('Slew Rate Calculation', lastSlewRateResult);
+                    saveSlewRateBtn.disabled = true;
+                }
+            });
+            calculateSlewRateBtn.addEventListener('click', calculateSlewRate);
             
-            /**
-             * Handles the calculation of Voltage Gain (Ratio and dB).
-             */
+            // --- Voltage Gain Calculation ---
+            const inputVoltageIn = document.getElementById('inputVoltageIn');
+            const inputVoltageOut = document.getElementById('inputVoltageOut');
+            const calculateGainBtn = document.getElementById('calculateGainBtn');
+            const saveGainBtn = document.getElementById('saveGainBtn');
+            const resultGainContainer = document.getElementById('result-gain-container');
+            let lastGainResult = null;
+
             function calculateGain() {
                 resultGainContainer.classList.add('hidden');
+                saveGainBtn.disabled = true;
 
                 const V_IN = parseFloat(inputVoltageIn.value);
                 const V_OUT = parseFloat(inputVoltageOut.value);
 
-                // V_IN must be positive, V_OUT must be non-negative.
                 if (!validateInputs([V_IN, V_OUT], 'gain')) return;
 
-                // 1. Gain Ratio: A_v = V_out / V_in
                 const A_v = V_OUT / V_IN;
-                
                 let G_dB;
                 if (V_OUT === 0) {
-                    // Log of 0 is undefined, but practically it's negative infinity
                     G_dB = -Infinity; 
                 } else {
-                    // 2. Gain in Decibels: G_dB = 20 * Math.log10(A_v)
                     G_dB = 20 * Math.log10(A_v);
                 }
 
-                // Update Output Fields
-                outputGainRatio.textContent = `${A_v.toFixed(2)}:1`;
-                outputGainDB.textContent = G_dB === -Infinity ? `-Inf dB` : `${G_dB.toFixed(2)} dB`;
+                const G_dB_display = G_dB === -Infinity ? `-Inf dB` : `${G_dB.toFixed(2)} dB`;
+                
+                document.getElementById('output-gain-ratio').textContent = `${A_v.toFixed(2)}:1`;
+                document.getElementById('output-gain-db').textContent = G_dB_display;
 
+                lastGainResult = {
+                    'Input RMS Voltage ($$V_{in}$$)': `${V_IN.toFixed(2)} V`,
+                    'Output RMS Voltage ($$V_{out}$$)': `${V_OUT.toFixed(2)} V`,
+                    'Voltage Ratio (Result)': `${A_v.toFixed(2)}:1`,
+                    'Gain in Decibels (Result)': G_dB_display,
+                };
+                
                 resultGainContainer.classList.remove('hidden');
+                saveGainBtn.disabled = false;
             }
+            saveGainBtn.addEventListener('click', () => {
+                if (lastGainResult) {
+                    saveResult('Voltage Gain Calculation', lastGainResult);
+                    saveGainBtn.disabled = true;
+                }
+            });
+            calculateGainBtn.addEventListener('click', calculateGain);
 
 
-            // Attach event listeners for calculations
-            calculatePowerBtn.addEventListener('click', calculateRmsPower);
-            calculateVoltageBtn.addEventListener('click', calculateTargetVoltage);
-            calculateImpedanceInBtn.addEventListener('click', calculateInputImpedance);
-            calculateImpedanceOutBtn.addEventListener('click', calculateOutputImpedance); 
-            calculateDampingFactorBtn.addEventListener('click', calculateDampingFactor); 
-            calculateSlewRateBtn.addEventListener('click', calculateSlewRate);
-            calculateGainBtn.addEventListener('click', calculateGain); // New Gain Calculation Listener
+            // --- General Logic for Enter Key and Theme ---
             
-            // Allow calculation on pressing 'Enter' in input fields
-            voltageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateRmsPower(); });
-            resistancePInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateRmsPower(); });
-            targetPowerInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateTargetVoltage(); });
-            resistanceVInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateTargetVoltage(); });
-            voltageNoLoadInInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateInputImpedance(); });
-            resistanceKnownInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateInputImpedance(); });
-            voltageLoadInInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateInputImpedance(); });
-            
-            // Enter listeners for Output Impedance
-            voltageNoLoadOutInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateOutputImpedance(); });
-            voltageLoadOutInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateOutputImpedance(); });
-            resistanceLoadOutInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateOutputImpedance(); });
+            // Re-map Enter key to calculation for all inputs
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        // Find the closest parent section and trigger the calculate button
+                        const section = input.closest('[id$="-section"]');
+                        if (section) {
+                            const calcButton = section.querySelector('[id^="calculate"]');
+                            if (calcButton) calcButton.click();
+                        }
+                    }
+                });
+            });
 
-            // Enter listeners for Damping Factor
-            resistanceLoadDFInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateDampingFactor(); });
-            impedanceOutputDFInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateDampingFactor(); });
-
-            // Enter listeners for Slew Rate
-            voltageChangeSRInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateSlewRate(); });
-            riseTimeSRInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateSlewRate(); });
-            
-            // Enter listeners for Gain
-            inputVoltageIn.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateGain(); });
-            inputVoltageOut.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateGain(); });
-
-
-            // --- Theme Toggling (Basic dark mode simulation) ---
+            // Basic dark mode simulation
             const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
             if (isDarkMode) {
                 document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.classList.remove('dark');
             }
+            
+            // Initialize report view state on load
+            generateReport();
         });
     </script>
 </body>
