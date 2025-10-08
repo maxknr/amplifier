@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power Supply Transformer Voltage Calculator</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Dark mode body background */
+            background-color: #1f2937; /* Tailwind gray-800 */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top, allowing scroll */
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        /* Custom styles for professional look */
+        .card {
+            /* Dark mode card background */
+            background-color: #374151; /* Tailwind gray-700 */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Stronger shadow for dark mode contrast */
+            transition: all 0.3s ease;
+        }
+        .input-field {
+            /* Dark mode input field styling */
+            border: 1px solid #4b5563; /* Tailwind gray-600 */
+            background-color: #1f2937; /* Tailwind gray-800 */
+            color: #f3f4f6; /* Light gray text */
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            transition: border-color 0.2s;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #60a5fa; /* Tailwind blue-400 focus */
+        }
+        /* Style for placeholder text in dark mode */
+        ::placeholder {
+            color: #9ca3af; /* Tailwind gray-400 */
+        }
+        .mode-button {
+            transition: all 0.2s;
+            @apply px-2 py-2 text-xs md:text-sm font-medium rounded-lg border border-gray-600;
+        }
+        .mode-button.active {
+            @apply bg-blue-600 border-blue-600 text-white shadow-lg;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Firebase Initialization (Required Scaffold) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth;
+
+        if (firebaseConfig) {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('Debug'); // Enable Firestore logging
+
+                // Authenticate user
+                if (initialAuthToken) {
+                    signInWithCustomToken(auth, initialAuthToken)
+                        .then(() => { console.log("Firebase signed in with custom token."); })
+                        .catch((error) => { console.error("Firebase custom token sign in failed:", error); });
+                } else {
+                    signInAnonymously(auth)
+                        .then(() => { console.log("Firebase signed in anonymously."); })
+                        .catch((error) => { console.error("Firebase anonymous sign in failed:", error); });
+                }
+            } catch (e) {
+                console.error("Firebase initialization error:", e);
+            }
+        }
+    </script>
+    <!-- End Firebase Scaffold -->
+
+    <!-- Adjusted container for single calculator -->
+    <div class="w-full max-w-lg">
+
+        <!-- Calculator Card -->
+        <div class="card p-8 md:p-10 rounded-xl w-full text-white">
+            <h1 class="text-2xl font-bold text-white mb-4 border-b border-gray-600 pb-2">
+                Power Supply Transformer Voltage Calculator
+            </h1>
+            
+            <!-- Mode Selection: Split into two clear sections -->
+            
+            <!-- 1. Single-Rail Supply -->
+            <h2 class="text-lg font-medium text-gray-200 mb-2">1. Single-Rail Supply</h2>
+            <!-- Updated to a 3-column grid for the new option -->
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <button id="half_wave_btn" class="mode-button bg-gray-500 hover:bg-gray-400" onclick="setMode('half_wave', 'half_wave_btn')">Half-Wave (1 Diode)</button>
+                
+                <!-- NEW MODE: Full-Wave Center-Tapped Single-Rail -->
+                <button id="ct_2diode_single_btn" class="mode-button bg-gray-500 hover:bg-gray-400" onclick="setMode('ct_2diode_single_rail', 'ct_2diode_single_btn')">Full-Wave CT (2 Diodes)</button>
+                
+                <!-- Bridge Rectifier Single-Rail -->
+                <button id="bridge_btn" class="mode-button active" onclick="setMode('bridge_rectifier_single', 'bridge_btn')">Bridge Rectifier (4 Diodes)</button>
+            </div>
+
+            <!-- 2. Symmetrical (Dual-Rail) Supply -->
+            <h2 class="text-lg font-medium text-gray-200 mb-2 mt-4">2. Symmetrical (Dual-Rail) Supply</h2>
+            <div class="grid grid-cols-2 gap-2 mb-6">
+                <!-- Center Tapped 2-Diode (1 Diode Drop) -->
+                <button id="ct_2diode_btn" class="mode-button bg-gray-500 hover:bg-gray-400" onclick="setMode('ct_2diode', 'ct_2diode_btn')">Center Tapped Dual (1 Diode Drop)</button>
+                
+                <!-- Symmetrical Bridge 4-Diode (2 Diode Drops) -->
+                <button id="ct_4diode_btn" class="mode-button bg-gray-500 hover:bg-gray-400" onclick="setMode('ct_4diode', 'ct_4diode_btn')">Split-Rail Bridge (2 Diode Drops)</button>
+            </div>
+
+            <p class="text-sm text-gray-400 mb-6">
+                Calculates the required secondary **RMS voltage** for the selected rectifier type.
+            </p>
+            
+            <!-- Dynamic Content Area -->
+            <!-- Circuit Diagram Image Placeholder -->
+            <div class="mb-6 rounded-lg overflow-hidden border border-gray-600">
+                <!-- Initial image source reflects the default 'bridge_rectifier_single' mode -->
+                <img id="diagramImage" src="https://raw.githubusercontent.com/maxknr/amplifier/main/fullwave.png" 
+                     alt="Circuit diagram placeholder" 
+                     class="w-full h-auto object-cover" 
+                     onerror="this.onerror=null; this.src='https://placehold.co/500x100/0f172a/60a5fa?text=Circuit+Diagram';">
+                <p id="diagramText" class="text-xs text-center text-gray-400 p-2 bg-gray-900">Bridge Rectifier uses 4 diodes, $2 \times V_{DIODE}$ drop.</p>
+            </div>
+
+            <!-- Input Section -->
+            <div class="space-y-4 mb-8">
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Required DC Output Voltage (Vdc_out) -->
+                    <div>
+                        <label for="vdcOut" class="block text-sm font-medium text-gray-300">Target DC Output</label>
+                        <input type="number" id="vdcOut" step="0.1"
+                            class="mt-1 w-full input-field" placeholder="Volts (e.g., 12)" oninput="calculateSpecs()">
+                    </div>
+                    
+                    <!-- Diode Drop (Vdiode_drop) -->
+                    <div>
+                        <label for="vdiodeDrop" class="block text-sm font-medium text-gray-300">Diode Drop</label>
+                        <input type="number" id="vdiodeDrop" value="0.7" step="0.1"
+                            class="mt-1 w-full input-field" placeholder="Volts (per diode)" oninput="calculateSpecs()">
+                    </div>
+                </div>
+
+                <!-- AC Input Voltage (Vac_in) - Disabled as it's not needed for Vsec calculation -->
+                <div>
+                    <label for="vacIn" class="block text-sm font-medium text-gray-300">Primary AC Input (Reference)</label>
+                    <input type="number" id="vacIn" value="230" step="1"
+                        class="mt-1 w-full input-field" placeholder="Primary RMS Volts" disabled>
+                </div>
+            </div>
+
+            <!-- Output Section -->
+            <h2 class="text-xl font-semibold text-white mb-4 pt-4 border-t border-gray-600">
+                Required Transformer Output
+            </h2>
+
+            <div class="space-y-4">
+                <!-- Secondary RMS Voltage -->
+                <div class="bg-blue-900 p-4 rounded-lg flex justify-between items-center">
+                    <span id="outputLabel" class="text-blue-200 font-medium">Secondary RMS Voltage (1 Decimal Place)</span>
+                    <span id="vSecRmsResult" class="text-xl font-bold text-blue-100">0.0 V</span>
+                </div>
+            </div>
+
+            <p id="formulaText" class="text-xs text-gray-500 mt-6">
+                Formula: $\frac{V_{DC\_OUT} + V_{RIPPLE} + (2 \times V_{DIODE})}{\sqrt{2}}$
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'bridge_rectifier_single'; // Default mode
+
+        // Helper function for robust number parsing
+        function getNum(id, defaultValue) {
+            const el = document.getElementById(id);
+            if (el && el.value !== null && el.value !== "") {
+                const value = parseFloat(el.value);
+                return isNaN(value) || value < 0 ? 0 : value;
+            }
+            return defaultValue;
+        }
+
+        // Function to switch modes - now takes buttonId to ensure only the clicked button is active
+        function setMode(mode, buttonId) {
+            currentMode = mode;
+            // Update button visual state: Remove active class from ALL buttons
+            document.querySelectorAll('.mode-button').forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class only to the button that was clicked
+            document.getElementById(buttonId).classList.add('active');
+
+
+            // Recalculate and update UI content
+            calculateSpecs();
+            updateUIContent(mode);
+        }
+
+        // Function to update dynamic text and images based on mode
+        function updateUIContent(mode) {
+            const diagramImage = document.getElementById('diagramImage');
+            const diagramText = document.getElementById('diagramText');
+            const formulaText = document.getElementById('formulaText');
+            const outputLabel = document.getElementById('outputLabel');
+
+            // Define Image sources 
+            const diagramSources = {
+                'half_wave': "https://raw.githubusercontent.com/maxknr/amplifier/main/halfwave.png",
+                // Full-Wave CT Single-Rail
+                'ct_2diode_single_rail': "https://raw.githubusercontent.com/maxknr/amplifier/main/fullwavect.png",
+                // Center Tapped Dual-Rail (Symmetrical) - UPDATED SOURCE
+                'ct_2diode': "https://raw.githubusercontent.com/maxknr/amplifier/main/twodiodesymmetrical.png", 
+                // Symmetrical Bridge
+                'ct_4diode': "https://raw.githubusercontent.com/maxknr/amplifier/main/smmetricalbridge.png",
+                // Bridge Rectifier Single-Rail
+                'bridge_rectifier_single': "https://raw.githubusercontent.com/maxknr/amplifier/main/fullwave.png"
+            };
+
+            // Set fallback image for when the specific image fails to load
+            const fallbackImage = 'https://placehold.co/500x100/0f172a/60a5fa?text=Circuit+Diagram';
+            diagramImage.onerror = () => { diagramImage.src = fallbackImage; };
+
+
+            switch (mode) {
+                case 'half_wave':
+                    diagramImage.src = diagramSources.half_wave;
+                    diagramText.innerHTML = `Half-Wave uses 1 diode, $1 \times V_{DIODE}$ drop. Note: Half-wave rectification has higher ripple.`;
+                    formulaText.innerHTML = `Formula: $\frac{V_{DC\_OUT} + V_{RIPPLE} + V_{DIODE}}{\sqrt{2}}$`;
+                    outputLabel.textContent = "Secondary RMS Voltage (1 Decimal Place)";
+                    break;
+
+                case 'ct_2diode_single_rail':
+                    diagramImage.src = diagramSources.ct_2diode_single_rail;
+                    diagramText.innerHTML = `Full-Wave Center-Tapped (2-Diode) for single rail. $1 \times V_{DIODE}$ drop. **Requires an X-0-X transformer.** The output shows the center-tapped voltage specification.`;
+                    formulaText.innerHTML = `Formula: $\frac{2 \times (V_{DC\_OUT} + V_{RIPPLE} + V_{DIODE})}{\sqrt{2}}$ (Outputs total $2X$ V).`;
+                    outputLabel.textContent = "Transformer Specification (X.X-0-X.X Volts)";
+                    break;
+
+                case 'ct_2diode':
+                    diagramImage.src = diagramSources.ct_2diode;
+                    diagramText.innerHTML = `Center-Tapped Dual-Rail (2-Diode) uses 2 diodes, $1 \times V_{DIODE}$ drop per rail. **Requires an X-0-X transformer.**`;
+                    formulaText.innerHTML = `Formula: $\frac{V_{DC\_OUT} + V_{RIPPLE} + V_{DIODE}}{\sqrt{2}}$ (Calculates one 'X' value for $\pm X \text{ V}$ output).`;
+                    outputLabel.textContent = "Transformer Specification (X-0-X Volts)";
+                    break;
+
+                case 'ct_4diode':
+                    diagramImage.src = diagramSources.ct_4diode;
+                    diagramText.innerHTML = `Split-Rail Bridge (4-Diode) uses **$2 \times V_{DIODE}$** drop per rail. **Requires an X-0-X transformer.**`;
+                    formulaText.innerHTML = `Formula: $\frac{V_{DC\_OUT} + V_{RIPPLE} + (2 \times V_{DIODE})}{\sqrt{2}}$ (Calculates one 'X' value for $\pm X \text{ V}$ output).`;
+                    outputLabel.textContent = "Transformer Specification (X-0-X Volts)";
+                    break;
+                
+                case 'bridge_rectifier_single':
+                default:
+                    // Bridge Rectifier (4-diode circuit) for single rail
+                    diagramImage.src = diagramSources.bridge_rectifier_single;
+                    diagramText.innerHTML = `Bridge Rectifier uses 4 diodes, $2 \times V_{DIODE}$ drop.`;
+                    formulaText.innerHTML = `Formula: $\frac{V_{DC\_OUT} + V_{RIPPLE} + (2 \times V_{DIODE})}{\sqrt{2}}$`;
+                    outputLabel.textContent = "Secondary RMS Voltage (1 Decimal Place)";
+                    break;
+            }
+        }
+
+        // Main calculation function
+        function calculateSpecs() {
+            const V_ripple = 1.0; // Fixed ripple allowance (V)
+            const V_dc_out = getNum('vdcOut', 0); 
+            const V_diode_drop = getNum('vdiodeDrop', 0.7); 
+            const resultElement = document.getElementById('vSecRmsResult');
+
+            if (V_dc_out <= 0) {
+                resultElement.textContent = "---";
+                return;
+            }
+
+            let V_sec_peak;
+            let V_sec_rms;
+            let resultText = "";
+
+            switch (currentMode) {
+                case 'half_wave':
+                    // Half-Wave: 1 Diode Drop
+                    // Calculation for the full secondary winding RMS voltage
+                    V_sec_peak = V_dc_out + V_ripple + V_diode_drop;
+                    V_sec_rms = V_sec_peak / Math.sqrt(2);
+                    resultText = `${V_sec_rms.toFixed(1)} V`;
+                    break;
+
+                case 'ct_2diode_single_rail':
+                    // Full-Wave Center-Tapped Single-Rail: 1 Diode Drop (per half-winding)
+                    // Calculate V_RMS for ONE half-winding (X)
+                    const V_sec_peak_half = V_dc_out + V_ripple + V_diode_drop;
+                    const V_sec_rms_half = V_sec_peak_half / Math.sqrt(2);
+                    
+                    // Display as X.X-0-X.X V
+                    const V_rms_half_1d = V_sec_rms_half.toFixed(1); // Use one decimal place for precision
+                    resultText = `${V_rms_half_1d}-0-${V_rms_half_1d} V`;
+                    break;
+
+                case 'ct_2diode':
+                    // Center-Tapped Dual-Rail: 1 Diode Drop (per half-winding)
+                    V_sec_peak = V_dc_out + V_ripple + V_diode_drop;
+                    V_sec_rms = V_sec_peak / Math.sqrt(2);
+                    
+                    // Display as X-0-X V, where X is V_sec_rms rounded to the nearest whole number
+                    const V_rms_half_2d = V_sec_rms.toFixed(0);
+                    resultText = `${V_rms_half_2d}-0-${V_rms_half_2d} V`;
+                    break;
+                
+                case 'ct_4diode':
+                    // Symmetrical Bridge (4-Diode): 2 Diode Drops (per rail)
+                    V_sec_peak = V_dc_out + V_ripple + (2 * V_diode_drop);
+                    V_sec_rms = V_sec_peak / Math.sqrt(2);
+                    
+                    // Display as X-0-X V, where X is V_sec_rms rounded to the nearest whole number
+                    const V_rms_half_4d = V_sec_rms.toFixed(0);
+                    resultText = `${V_rms_half_4d}-0-${V_rms_half_4d} V`;
+                    break;
+
+                case 'bridge_rectifier_single':
+                default:
+                    // Bridge Rectifier (4-diode circuit) for single rail
+                    V_sec_peak = V_dc_out + V_ripple + (2 * V_diode_drop);
+                    V_sec_rms = V_sec_peak / Math.sqrt(2);
+                    resultText = `${V_sec_rms.toFixed(1)} V`;
+                    break;
+            }
+            
+            resultElement.textContent = resultText;
+        }
+
+        // Initialize mode and calculation on load
+        window.onload = function() {
+            // Ensure the correct button is active (default is bridge_rectifier_single) and UI is set up for the default mode
+            setMode(currentMode, 'bridge_btn');
+        };
+    </script>
+</body>
+</html>
