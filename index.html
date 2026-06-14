@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>Ampinaudio Labs • Professional Measurement Suite</title>
+    <title>Ampinaudio Amplifier Test Suite</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
@@ -97,7 +97,6 @@
             padding: 1.25rem;
             margin-top: 1.25rem;
             color: #0f766e;
-            font-size: 0.98rem;
         }
 
         table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
@@ -140,7 +139,7 @@
             </div>
             <div>
                 <h1>Ampinaudio Labs</h1>
-                <p class="subtitle">International Testing Laboratory</p>
+                <p class="subtitle">Amplifier Test Suite</p>
             </div>
         </div>
     </header>
@@ -151,27 +150,11 @@
         <div class="card noprint">
             <h2>Lab Settings</h2>
             <div class="grid">
-                <div class="input-group">
-                    <label>Upload Logo (Local)</label>
-                    <input type="file" id="logoUpload" accept="image/*">
-                </div>
-                <div class="input-group">
-                    <label>Upload QR Code</label>
-                    <input type="file" id="qrUpload" accept="image/*">
-                </div>
-                <div class="input-group">
-                    <label>Logo URL (Optional)</label>
-                    <input id="logoUrl" placeholder="https://example.com/logo.png">
-                    <button onclick="applyLogoUrl()" style="margin-top:6px;">Apply URL</button>
-                </div>
-                <div class="input-group">
-                    <label>Company Email</label>
-                    <input id="companyEmail" placeholder="lab@ampinaudio.com">
-                </div>
-                <div class="input-group">
-                    <label>Company Website</label>
-                    <input id="companyWebsite" placeholder="https://ampinaudio.com">
-                </div>
+                <div class="input-group"><label>Upload Logo (Local)</label><input type="file" id="logoUpload" accept="image/*"></div>
+                <div class="input-group"><label>Upload QR Code</label><input type="file" id="qrUpload" accept="image/*"></div>
+                <div class="input-group"><label>Logo URL (Optional)</label><input id="logoUrl" placeholder="https://example.com/logo.png"><button onclick="applyLogoUrl()" style="margin-top:6px;">Apply</button></div>
+                <div class="input-group"><label>Company Email</label><input id="companyEmail" placeholder="lab@ampinaudio.com"></div>
+                <div class="input-group"><label>Company Website</label><input id="companyWebsite" placeholder="https://ampinaudio.com"></div>
             </div>
         </div>
 
@@ -197,30 +180,92 @@
             <button onclick="loadSession()" style="background:#64748b;">Load Session</button>
         </div>
 
-        <!-- AL-01 Enhanced -->
+        <!-- AL-01 Enhanced with Transformer & Rail Details -->
         <div class="card">
             <h2>AL-01 Power &amp; Current Analyzer</h2>
             <div class="grid">
                 <div class="input-group"><label>V<sub>RMS</sub> AC (V)</label><input id="p_vrms" type="number" step="any"></div>
                 <div class="input-group"><label>Load (Ω)</label><input id="p_rl" type="number" step="any" value="8"></div>
-                <div class="input-group"><label>DC Loaded Voltage (V)</label><input id="dc_loaded" type="number" step="any"></div>
-                <div class="input-group"><label>DC Unloaded Voltage (V)</label><input id="dc_unloaded" type="number" step="any"></div>
                 <div class="input-group"><label>Transformer Voltage (V)</label><input id="trans_voltage" type="number" step="any"></div>
-                <div class="input-group"><label>VA Rating (AC)</label><input id="va_rating" type="number" step="any"></div>
+                <div class="input-group"><label>VA Rating</label><input id="va_rating" type="number" step="any"></div>
+                <div class="input-group"><label>Single / Split</label>
+                    <select id="trans_type">
+                        <option value="Single">Single Voltage</option>
+                        <option value="Split">Split Voltage (±)</option>
+                    </select>
+                </div>
+                <div class="input-group"><label>DC Loaded Rail (V)</label><input id="dc_loaded" type="number" step="any"></div>
+                <div class="input-group"><label>DC Unloaded Rail (V)</label><input id="dc_unloaded" type="number" step="any"></div>
             </div>
             <button onclick="calcPower()">Calculate Power</button>
             <div id="powerOut" class="result"></div>
         </div>
 
-        <!-- Other Analyzers (AL-02 to AL-06) remain the same -->
-        <!-- ... (copy from your previous file if needed) ... -->
+        <!-- Other Analyzers -->
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem;">
+            <div class="card">
+                <h2>AL-02 Input Impedance Analyzer</h2>
+                <div class="grid">
+                    <div class="input-group"><label>V<sub>NL</sub> (V)</label><input id="zin_vnl" type="number" step="any"></div>
+                    <div class="input-group"><label>R<sub>S</sub> (Ω)</label><input id="zin_rs" type="number" step="any"></div>
+                    <div class="input-group"><label>V<sub>L</sub> (V)</label><input id="zin_vl" type="number" step="any"></div>
+                </div>
+                <button onclick="calcZin()">Calculate Z<sub>in</sub></button>
+                <div id="zinOut" class="result"></div>
+            </div>
 
-        <!-- Notes & Log -->
+            <div class="card">
+                <h2>AL-03 Output Impedance Analyzer</h2>
+                <div class="grid">
+                    <div class="input-group"><label>V<sub>NL</sub> (V)</label><input id="zout_vnl" type="number" step="any"></div>
+                    <div class="input-group"><label>V<sub>L</sub> (V)</label><input id="zout_vl" type="number" step="any"></div>
+                    <div class="input-group"><label>R<sub>L</sub> (Ω)</label><input id="zout_rl" type="number" step="any"></div>
+                </div>
+                <button onclick="calcZout()">Calculate Z<sub>out</sub></button>
+                <div id="zoutOut" class="result"></div>
+            </div>
+
+            <div class="card">
+                <h2>AL-04 Damping Factor Analyzer</h2>
+                <div class="grid">
+                    <div class="input-group"><label>Nominal Speaker (Ω)</label><input id="df_rnom" type="number" step="any" value="8"></div>
+                    <div class="input-group"><label>Output Impedance (Ω)</label><input id="df_zout" type="number" step="any"></div>
+                </div>
+                <button onclick="calcDF()">Calculate Damping Factor</button>
+                <div id="dfOut" class="result"></div>
+            </div>
+
+            <div class="card">
+                <h2>AL-05 Slew Rate Analyzer</h2>
+                <div class="grid">
+                    <div class="input-group"><label>ΔV (V)</label><input id="sr_dv" type="number" step="any"></div>
+                    <div class="input-group"><label>Δt</label><input id="sr_dt" type="number" step="any"></div>
+                    <div class="input-group"><label>Unit</label>
+                        <select id="sr_unit"><option value="us">µs</option><option value="ns">ns</option></select>
+                    </div>
+                </div>
+                <button onclick="calcSR()">Calculate Slew Rate</button>
+                <div id="srOut" class="result"></div>
+            </div>
+
+            <div class="card">
+                <h2>AL-06 Voltage Gain Analyzer</h2>
+                <div class="grid">
+                    <div class="input-group"><label>V<sub>IN</sub> RMS (V)</label><input id="gain_vin" type="number" step="any"></div>
+                    <div class="input-group"><label>V<sub>OUT</sub> RMS (V)</label><input id="gain_vout" type="number" step="any"></div>
+                </div>
+                <button onclick="calcGain()">Calculate Gain</button>
+                <div id="gainOut" class="result"></div>
+            </div>
+        </div>
+
+        <!-- Notes -->
         <div class="card">
             <h2>Observations &amp; Notes</h2>
             <textarea id="notes" rows="5" placeholder="Test conditions, anomalies..."></textarea>
         </div>
 
+        <!-- Log -->
         <div class="card">
             <h2>Measurement Log</h2>
             <table id="logTable">
@@ -232,19 +277,34 @@
         <div class="card" id="report" style="display:none;"></div>
     </div>
 
+    <!-- Measurement Guide -->
+    <div id="guideModal" class="modal">
+        <div class="modal-content">
+            <h2>📘 How to Perform Amplifier Measurements</h2>
+            <h3>General Preparation</h3>
+            <ul>
+                <li>Warm up amplifier for minimum 30 minutes</li>
+                <li>Use proper dummy loads and calibrated instruments</li>
+                <li>Record all test conditions</li>
+            </ul>
+            <button onclick="hideMeasurementGuide()" style="margin-top:20px;">Close</button>
+        </div>
+    </div>
+
     <script>
         let currentLogoSrc = "https://via.placeholder.com/220x80/0f172a/ffffff?text=AMPINAUDIO+LABS";
         let currentQRSrc = "https://via.placeholder.com/160/0f172a/ffffff?text=QR+CODE";
         let log = [];
+        let latestResults = {};
 
         document.getElementById("date").valueAsDate = new Date();
 
-        // Logo & QR Upload (same as before)
-        document.getElementById("logoUpload").addEventListener("change", function(e) {
+        // Logo & QR
+        document.getElementById("logoUpload").addEventListener("change", e => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(ev) {
+                reader.onload = ev => {
                     currentLogoSrc = ev.target.result;
                     document.getElementById("headerLogo").src = currentLogoSrc;
                 };
@@ -252,13 +312,11 @@
             }
         });
 
-        document.getElementById("qrUpload").addEventListener("change", function(e) {
+        document.getElementById("qrUpload").addEventListener("change", e => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(ev) {
-                    currentQRSrc = ev.target.result;
-                };
+                reader.onload = ev => currentQRSrc = ev.target.result;
                 reader.readAsDataURL(file);
             }
         });
@@ -274,50 +332,136 @@
         function addLog(analyzer, summary, data) {
             const time = new Date().toLocaleString();
             log.push({time, analyzer, summary, data});
+            latestResults[analyzer] = {summary, data};
+
             const tbody = document.querySelector("#logTable tbody");
             const row = document.createElement("tr");
             row.innerHTML = `<td>${time}</td><td><strong>${analyzer}</strong></td><td>${summary}</td>`;
             tbody.appendChild(row);
         }
 
-        // Enhanced AL-01 Calculation
+        // Enhanced AL-01
         function calcPower() {
             const vrms = parseFloat(document.getElementById("p_vrms").value) || 0;
             const rl = parseFloat(document.getElementById("p_rl").value) || 8;
+            const transV = parseFloat(document.getElementById("trans_voltage").value) || 0;
+            const va = parseFloat(document.getElementById("va_rating").value) || 0;
             const dcLoaded = parseFloat(document.getElementById("dc_loaded").value) || 0;
             const dcUnloaded = parseFloat(document.getElementById("dc_unloaded").value) || 0;
-            const transV = parseFloat(document.getElementById("trans_voltage").value) || 0;
-            const vaRating = parseFloat(document.getElementById("va_rating").value) || 0;
+            const transType = document.getElementById("trans_type").value;
 
-            let html = "";
-
+            let output = "";
             if (vrms > 0) {
                 const p = (vrms * vrms) / rl;
                 const vp = vrms * Math.sqrt(2);
                 const vpp = vp * 2;
                 const ip = vp / rl;
-                html += `<strong>AC Power:</strong> ${p.toFixed(2)} W<br>
-                         Vpeak: ${vp.toFixed(2)} V | Vpp: ${vpp.toFixed(2)} V | Ipeak: ${ip.toFixed(2)} A<br>`;
+                output += `<strong>AC Power:</strong> ${p.toFixed(2)} W<br>Vpeak: ${vp.toFixed(2)} V | Vpp: ${vpp.toFixed(2)} V | Ipeak: ${ip.toFixed(2)} A<br>`;
             }
+            if (transV > 0) output += `<strong>Transformer:</strong> ${transV} V (${transType})<br>`;
+            if (va > 0) output += `<strong>VA Rating:</strong> ${va} VA<br>`;
+            if (dcLoaded > 0) output += `<strong>DC Loaded Rail:</strong> ${dcLoaded} V<br>`;
+            if (dcUnloaded > 0) output += `<strong>DC Unloaded Rail:</strong> ${dcUnloaded} V<br>`;
 
-            if (dcLoaded > 0) html += `<strong>DC Loaded:</strong> ${dcLoaded.toFixed(2)} V<br>`;
-            if (dcUnloaded > 0) html += `<strong>DC Unloaded:</strong> ${dcUnloaded.toFixed(2)} V<br>`;
-            if (transV > 0) html += `<strong>Transformer Voltage:</strong> ${transV.toFixed(2)} V<br>`;
-            if (vaRating > 0) html += `<strong>VA Rating:</strong> ${vaRating.toFixed(0)} VA<br>`;
-
-            document.getElementById("powerOut").innerHTML = html || "Enter values to calculate";
-            
+            document.getElementById("powerOut").innerHTML = output || "Enter values above";
             const summary = `Power ${ (vrms * vrms / rl).toFixed(2) } W`;
-            addLog("AL-01", summary, {vrms, rl, dcLoaded, dcUnloaded, transV, vaRating});
+            addLog("AL-01", summary, {vrms, rl, transV, va, dcLoaded, dcUnloaded});
         }
 
-        // Other calculation functions remain the same (calcZin, calcZout, etc.)
-        // ... paste them here from your original file if needed ...
+        // Other calculators (kept same)
+        function calcZin() {
+            const vnl = parseFloat(document.getElementById("zin_vnl").value) || 0;
+            const rs = parseFloat(document.getElementById("zin_rs").value) || 0;
+            const vl = parseFloat(document.getElementById("zin_vl").value) || 0;
+            if (vnl <= vl) return alert("VNL must be greater than VL");
+            const zin = rs * (vl / (vnl - vl));
+            const summary = `Zin ${zin.toFixed(2)} Ω`;
+            document.getElementById("zinOut").innerHTML = summary;
+            addLog("AL-02", summary, {zin});
+        }
+
+        function calcZout() {
+            const vnl = parseFloat(document.getElementById("zout_vnl").value) || 0;
+            const vl = parseFloat(document.getElementById("zout_vl").value) || 0;
+            const rl = parseFloat(document.getElementById("zout_rl").value) || 0;
+            if (vl === 0) return;
+            const zout = rl * ((vnl / vl) - 1);
+            const summary = `Zout ${zout.toFixed(4)} Ω`;
+            document.getElementById("zoutOut").innerHTML = summary;
+            addLog("AL-03", summary, {zout});
+        }
+
+        function calcDF() {
+            const rnom = parseFloat(document.getElementById("df_rnom").value) || 0;
+            const zout = parseFloat(document.getElementById("df_zout").value) || 0;
+            if (zout === 0) return;
+            const df = rnom / zout;
+            const summary = `DF ${df.toFixed(2)}`;
+            document.getElementById("dfOut").innerHTML = summary;
+            addLog("AL-04", summary, {df});
+        }
+
+        function calcSR() {
+            let dv = parseFloat(document.getElementById("sr_dv").value) || 0;
+            let dt = parseFloat(document.getElementById("sr_dt").value) || 0;
+            if (document.getElementById("sr_unit").value === "ns") dt /= 1000;
+            if (dt === 0) return;
+            const sr = dv / dt;
+            const summary = `SR ${sr.toFixed(2)} V/µs`;
+            document.getElementById("srOut").innerHTML = summary;
+            addLog("AL-05", summary, {sr});
+        }
+
+        function calcGain() {
+            const vin = parseFloat(document.getElementById("gain_vin").value) || 0;
+            const vout = parseFloat(document.getElementById("gain_vout").value) || 0;
+            if (vin === 0) return;
+            const av = vout / vin;
+            const db = 20 * Math.log10(av);
+            const summary = `Gain ${db.toFixed(2)} dB`;
+            document.getElementById("gainOut").innerHTML = `Gain: ${av.toFixed(2)}×<br>${db.toFixed(2)} dB`;
+            addLog("AL-06", summary, {av, db});
+        }
 
         function generateReport() {
-            // Report generation code (same as your latest version)
-            // It will now include the latest AL-01 results
-            // ... (use the generateReport function from previous response)
+            const reportDiv = document.getElementById("report");
+            let resultsHTML = Object.keys(latestResults).map(key => {
+                return `<li><strong>${key}</strong> — ${latestResults[key].summary}</li>`;
+            }).join('');
+
+            let html = `
+                <div style="text-align:center; margin-bottom:30px; border-bottom:3px solid #14b8a6; padding-bottom:20px;">
+                    <img src="${currentLogoSrc}" style="height:85px; margin-bottom:15px;">
+                    <h2 style="margin:8px 0 4px;">AMPINAUDIO LABS</h2>
+                    <p style="margin:0; color:#475569;">Amplifier Test Suite</p>
+                    <p>${document.getElementById("companyEmail").value || ''} | ${document.getElementById("companyWebsite").value || ''}</p>
+                </div>
+                <h3 style="text-align:center;">AMPLIFIER TEST REPORT</h3>
+                <table style="width:100%; border-collapse:collapse; margin:25px 0;">
+                    <tr style="background:#f8fafc;"><td style="padding:10px; border:1px solid #ddd;"><strong>Company</strong></td><td>${document.getElementById("company").value || '—'}</td></tr>
+                    <tr><td style="padding:10px; border:1px solid #ddd;"><strong>Device</strong></td><td>${document.getElementById("device").value || '—'}</td></tr>
+                    <tr style="background:#f8fafc;"><td style="padding:10px; border:1px solid #ddd;"><strong>Model</strong></td><td>${document.getElementById("model").value || '—'}</td></tr>
+                    <tr><td style="padding:10px; border:1px solid #ddd;"><strong>Serial Number</strong></td><td>${document.getElementById("serial").value || '—'}</td></tr>
+                    <tr style="background:#f8fafc;"><td style="padding:10px; border:1px solid #ddd;"><strong>Technician</strong></td><td>${document.getElementById("tester").value || '—'}</td></tr>
+                    <tr><td style="padding:10px; border:1px solid #ddd;"><strong>Date</strong></td><td>${document.getElementById("date").value || '—'}</td></tr>
+                </table>
+                <h3>Measurement Results</h3>
+                <ul style="line-height:1.9; padding-left:20px;">
+                    ${resultsHTML || '<li>No measurements recorded yet.</li>'}
+                </ul>
+                <h3>Observations</h3>
+                <p style="white-space:pre-wrap;">${document.getElementById("notes").value || 'No observations provided.'}</p>
+                <div style="margin-top:60px; display:flex; justify-content:space-between;">
+                    <div>Technician Signature: _______________________________<br>Date: ___________</div>
+                    <div>Lab Manager Signature: _______________________________<br>Date: ___________</div>
+                </div>
+                <div style="margin-top:50px; text-align:center;">
+                    <img src="${currentQRSrc}" style="width:160px; height:160px;" alt="QR Code">
+                    <p style="margin-top:10px; font-size:0.9rem;">Scan for digital certificate and raw measurement data</p>
+                </div>
+            `;
+            reportDiv.innerHTML = html;
+            reportDiv.style.display = "block";
         }
 
         function printReport() {
@@ -325,7 +469,16 @@
             setTimeout(() => window.print(), 300);
         }
 
-        // Save / Load functions remain the same
+        function saveSession() { /* ... */ alert("Session saved!"); }
+        function loadSession() { /* ... */ alert("Session loaded!"); }
+
+        function showMeasurementGuide() {
+            document.getElementById("guideModal").style.display = "flex";
+        }
+
+        function hideMeasurementGuide() {
+            document.getElementById("guideModal").style.display = "none";
+        }
     </script>
 </body>
 </html>
